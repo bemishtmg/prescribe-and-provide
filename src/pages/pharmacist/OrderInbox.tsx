@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { Check, X, Eye, Clock, FileText, Loader2 } from "lucide-react";
+import { Check, X, Eye, Clock, FileText, Loader2, Lock } from "lucide-react";
 import type { Tables } from "@/integrations/supabase/types";
 
 type Order = Tables<"orders">;
