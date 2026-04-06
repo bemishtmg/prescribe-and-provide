@@ -11,6 +11,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { Plus, Pencil, Trash2, FileText } from "lucide-react";
+import { SkeletonRow } from "@/components/SkeletonCard";
+import PageTransition from "@/components/PageTransition";
 
 export default function InventoryManager() {
   const queryClient = useQueryClient();
@@ -83,97 +85,98 @@ export default function InventoryManager() {
   };
 
   return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between">
-        <CardTitle>Medicine Inventory</CardTitle>
-        <Dialog open={dialogOpen} onOpenChange={(open) => { if (!open) resetForm(); setDialogOpen(open); }}>
-          <DialogTrigger asChild>
-            <Button size="sm" className="gap-2">
-              <Plus className="w-4 h-4" /> Add Medicine
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>{editingId ? "Edit" : "Add"} Medicine</DialogTitle>
-            </DialogHeader>
-            <form
-              onSubmit={(e) => { e.preventDefault(); saveMutation.mutate(); }}
-              className="space-y-4"
-            >
-              <div className="space-y-2">
-                <Label>Name</Label>
-                <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required />
-              </div>
-              <div className="space-y-2">
-                <Label>Description</Label>
-                <Input value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>Price ($)</Label>
-                  <Input type="number" step="0.01" min="0" value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} required />
-                </div>
-                <div className="space-y-2">
-                  <Label>Stock</Label>
-                  <Input type="number" min="0" value={form.stock_level} onChange={(e) => setForm({ ...form, stock_level: e.target.value })} required />
-                </div>
-              </div>
-              <div className="flex items-center gap-3">
-                <Switch checked={form.requires_prescription} onCheckedChange={(v) => setForm({ ...form, requires_prescription: v })} />
-                <Label>Requires Prescription</Label>
-              </div>
-              <Button type="submit" className="w-full" disabled={saveMutation.isPending}>
-                {saveMutation.isPending ? "Saving..." : "Save"}
+    <PageTransition>
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <CardTitle className="text-base">Medicine Inventory</CardTitle>
+          <Dialog open={dialogOpen} onOpenChange={(open) => { if (!open) resetForm(); setDialogOpen(open); }}>
+            <DialogTrigger asChild>
+              <Button size="sm" className="gap-2">
+                <Plus className="w-4 h-4" /> Add Medicine
               </Button>
-            </form>
-          </DialogContent>
-        </Dialog>
-      </CardHeader>
-      <CardContent>
-        {isLoading ? (
-          <p className="text-muted-foreground text-center py-8">Loading...</p>
-        ) : !medicines?.length ? (
-          <p className="text-muted-foreground text-center py-8">No medicines yet. Add your first one!</p>
-        ) : (
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Price</TableHead>
-                  <TableHead>Stock</TableHead>
-                  <TableHead>Rx</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {medicines.map((med) => (
-                  <TableRow key={med.id}>
-                    <TableCell className="font-medium">{med.name}</TableCell>
-                    <TableCell>${med.price.toFixed(2)}</TableCell>
-                    <TableCell>
-                      <Badge variant={med.stock_level > 0 ? "secondary" : "destructive"}>
-                        {med.stock_level}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      {med.requires_prescription && <FileText className="w-4 h-4 text-primary" />}
-                    </TableCell>
-                    <TableCell className="text-right space-x-2">
-                      <Button variant="ghost" size="icon" onClick={() => openEdit(med)}>
-                        <Pencil className="w-4 h-4" />
-                      </Button>
-                      <Button variant="ghost" size="icon" onClick={() => deleteMutation.mutate(med.id)}>
-                        <Trash2 className="w-4 h-4 text-destructive" />
-                      </Button>
-                    </TableCell>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>{editingId ? "Edit" : "Add"} Medicine</DialogTitle>
+              </DialogHeader>
+              <form onSubmit={(e) => { e.preventDefault(); saveMutation.mutate(); }} className="space-y-4">
+                <div className="space-y-2">
+                  <Label>Name</Label>
+                  <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required />
+                </div>
+                <div className="space-y-2">
+                  <Label>Description</Label>
+                  <Input value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Price ($)</Label>
+                    <Input type="number" step="0.01" min="0" value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} required />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Stock</Label>
+                    <Input type="number" min="0" value={form.stock_level} onChange={(e) => setForm({ ...form, stock_level: e.target.value })} required />
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <Switch checked={form.requires_prescription} onCheckedChange={(v) => setForm({ ...form, requires_prescription: v })} />
+                  <Label>Requires Prescription</Label>
+                </div>
+                <Button type="submit" className="w-full" disabled={saveMutation.isPending}>
+                  {saveMutation.isPending ? "Saving..." : "Save"}
+                </Button>
+              </form>
+            </DialogContent>
+          </Dialog>
+        </CardHeader>
+        <CardContent>
+          {isLoading ? (
+            <div className="space-y-3">
+              {Array.from({ length: 5 }).map((_, i) => <SkeletonRow key={i} />)}
+            </div>
+          ) : !medicines?.length ? (
+            <p className="text-muted-foreground text-center py-8">No medicines yet. Add your first one!</p>
+          ) : (
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Name</TableHead>
+                    <TableHead>Price</TableHead>
+                    <TableHead>Stock</TableHead>
+                    <TableHead>Rx</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
-        )}
-      </CardContent>
-    </Card>
+                </TableHeader>
+                <TableBody>
+                  {medicines.map((med) => (
+                    <TableRow key={med.id} className="hover:bg-muted/30">
+                      <TableCell className="font-medium">{med.name}</TableCell>
+                      <TableCell>${med.price.toFixed(2)}</TableCell>
+                      <TableCell>
+                        <Badge variant={med.stock_level > 0 ? "secondary" : "destructive"}>
+                          {med.stock_level}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        {med.requires_prescription && <FileText className="w-4 h-4 text-primary" />}
+                      </TableCell>
+                      <TableCell className="text-right space-x-2">
+                        <Button variant="ghost" size="icon" onClick={() => openEdit(med)} className="hover:bg-primary/10">
+                          <Pencil className="w-4 h-4" />
+                        </Button>
+                        <Button variant="ghost" size="icon" onClick={() => deleteMutation.mutate(med.id)} className="hover:bg-destructive/10">
+                          <Trash2 className="w-4 h-4 text-destructive" />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </PageTransition>
   );
 }
