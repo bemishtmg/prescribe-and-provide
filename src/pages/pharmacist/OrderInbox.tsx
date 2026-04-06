@@ -324,5 +324,3 @@ function PrescriptionViewer({ prescriptionUrl }: { prescriptionUrl: string }) {
     </div>
   );
 }
-
-import { supabase } from "@/integrations/supabase/client";
