@@ -42,9 +42,9 @@ export default function AppHeader({ onCartOpen }: AppHeaderProps) {
 
         <div className="flex items-center gap-3">
           {role === "purchaser" && balance !== undefined && (
-            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary/10 border border-primary/20">
-              <Wallet className="w-4 h-4 text-primary" />
-              <span className="text-sm font-semibold text-primary">${balance.toFixed(2)}</span>
+            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20">
+              <Wallet className="w-4 h-4 text-emerald-500" />
+              <span className="text-sm font-semibold text-emerald-500">${balance.toFixed(2)}</span>
             </div>
           )}
           {role === "purchaser" && onCartOpen && (
