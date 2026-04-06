@@ -146,16 +146,7 @@ export default function OrderInbox() {
               <div className="text-lg font-semibold">Total: ${selectedOrder.total_price.toFixed(2)}</div>
 
               {selectedOrder.prescription_url && (
-                <div className="space-y-2">
-                  <Label className="flex items-center gap-2">
-                    <FileText className="w-4 h-4" /> Prescription Image
-                  </Label>
-                  <img
-                    src={selectedOrder.prescription_url}
-                    alt="Prescription"
-                    className="w-full rounded-lg border border-border max-h-64 object-contain"
-                  />
-                </div>
+                <PrescriptionViewer prescriptionUrl={selectedOrder.prescription_url} />
               )}
 
               {orderItems && (
