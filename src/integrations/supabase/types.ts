@@ -127,6 +127,7 @@ export type Database = {
       }
       profiles: {
         Row: {
+          balance: number
           created_at: string
           full_name: string | null
           id: string
@@ -134,6 +135,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          balance?: number
           created_at?: string
           full_name?: string | null
           id?: string
@@ -141,6 +143,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          balance?: number
           created_at?: string
           full_name?: string | null
           id?: string
@@ -148,6 +151,38 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      transactions: {
+        Row: {
+          amount: number
+          created_at: string
+          id: string
+          order_id: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          id?: string
+          order_id: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          id?: string
+          order_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transactions_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_roles: {
         Row: {
