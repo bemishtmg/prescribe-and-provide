@@ -3,8 +3,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import AppHeader from "@/components/AppHeader";
 import Marketplace from "./Marketplace";
 import MyOrders from "./MyOrders";
+import WalletHistory from "./WalletHistory";
 import CartSheet from "./CartSheet";
-import { ShoppingBag, ClipboardList } from "lucide-react";
+import { ShoppingBag, ClipboardList, Wallet } from "lucide-react";
 
 export default function PurchaserDashboard() {
   const [cartOpen, setCartOpen] = useState(false);
@@ -21,12 +22,18 @@ export default function PurchaserDashboard() {
             <TabsTrigger value="orders" className="gap-2">
               <ClipboardList className="w-4 h-4" /> My Orders
             </TabsTrigger>
+            <TabsTrigger value="wallet" className="gap-2">
+              <Wallet className="w-4 h-4" /> Wallet History
+            </TabsTrigger>
           </TabsList>
           <TabsContent value="marketplace">
             <Marketplace />
           </TabsContent>
           <TabsContent value="orders">
             <MyOrders />
+          </TabsContent>
+          <TabsContent value="wallet">
+            <WalletHistory />
           </TabsContent>
         </Tabs>
       </main>
