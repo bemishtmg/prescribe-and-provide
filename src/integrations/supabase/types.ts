@@ -222,6 +222,7 @@ export type Database = {
         Returns: boolean
       }
       process_payment: { Args: { order_id: string }; Returns: boolean }
+      reset_user_balance: { Args: { _user_id: string }; Returns: boolean }
     }
     Enums: {
       app_role: "pharmacist" | "purchaser"
