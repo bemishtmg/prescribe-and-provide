@@ -43,7 +43,8 @@ export default function MyOrders() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["purchaser-orders"] });
       queryClient.invalidateQueries({ queryKey: ["medicines"] });
-      toast.success("Payment successful! Stock has been updated.");
+      queryClient.invalidateQueries({ queryKey: ["user-balance"] });
+      toast.success("Payment successful! Balance deducted and stock updated.");
     },
     onError: (err: any) => toast.error(err.message),
   });
@@ -106,8 +107,8 @@ export default function MyOrders() {
                   onClick={() => payMutation.mutate(order.id)}
                   disabled={payMutation.isPending}
                 >
-                  <CreditCard className="w-4 h-4" />
-                  {payMutation.isPending ? "Processing..." : "Pay Now (Simulated)"}
+                   <CreditCard className="w-4 h-4" />
+                   {payMutation.isPending ? "Processing..." : `Pay $${order.total_price.toFixed(2)} from Wallet`}
                 </Button>
               )}
             </CardContent>
