@@ -233,3 +233,76 @@ function OrderCard({ order, onView }: { order: Order; onView: () => void }) {
     </div>
   );
 }
+
+function PrescriptionViewer({ prescriptionUrl }: { prescriptionUrl: string }) {
+  const [signedUrl, setSignedUrl] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // Extract the storage path from the full URL
+  const extractPath = (url: string) => {
+    const match = url.match(/\/prescriptions\/(.+)$/);
+    return match ? match[1] : null;
+  };
+
+  const fetchSignedUrl = async () => {
+    const path = extractPath(prescriptionUrl);
+    if (!path) {
+      setError("Invalid prescription path");
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+    try {
+      const { data, error: fnError } = await supabase.functions.invoke(
+        "get-signed-prescription-url",
+        { body: { path } }
+      );
+      if (fnError) throw fnError;
+      if (data.error) throw new Error(data.error);
+      setSignedUrl(data.signedUrl);
+
+      // Auto-expire after 55 seconds (before the 60s server expiry)
+      setTimeout(() => setSignedUrl(null), 55000);
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="space-y-2">
+      <Label className="flex items-center gap-2">
+        <FileText className="w-4 h-4" /> Prescription Image
+      </Label>
+      {signedUrl ? (
+        <div className="relative">
+          <img
+            src={signedUrl}
+            alt="Prescription"
+            className="w-full rounded-lg border border-border max-h-64 object-contain"
+          />
+          <div className="absolute top-2 right-2">
+            <Badge variant="outline" className="bg-card/80 text-xs gap-1">
+              <Lock className="w-3 h-3" /> Expires in 60s
+            </Badge>
+          </div>
+        </div>
+      ) : (
+        <div className="flex flex-col items-center gap-2 p-6 rounded-lg border border-border bg-muted/30">
+          <Lock className="w-6 h-6 text-muted-foreground" />
+          <p className="text-xs text-muted-foreground text-center">
+            Prescription is stored securely. Click to generate a temporary viewing link.
+          </p>
+          {error && <p className="text-xs text-destructive">{error}</p>}
+          <Button size="sm" onClick={fetchSignedUrl} disabled={loading} className="gap-2">
+            {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Eye className="w-4 h-4" />}
+            {loading ? "Loading..." : "View Prescription"}
+          </Button>
+        </div>
+      )}
+    </div>
+  );
+}
