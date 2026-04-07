@@ -115,8 +115,14 @@ export default function Marketplace() {
               >
                 <Card className="group flex flex-col overflow-hidden hover:shadow-lg hover:shadow-primary/5 transition-all duration-300 hover:-translate-y-1 border-border/80">
                   {/* Image placeholder */}
-                  <div className="h-36 bg-gradient-to-br from-muted to-secondary flex items-center justify-center relative overflow-hidden">
-                    <Pill className="w-10 h-10 text-muted-foreground/30 group-hover:scale-110 transition-transform duration-300" />
+                  <div className="h-36 relative overflow-hidden">
+                    <img
+                      src={med.image_url || getImageForMedicine(med.id)}
+                      alt={med.name}
+                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                      loading="lazy"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
                     {med.requires_prescription && (
                       <Badge className="absolute top-3 right-3 gap-1 text-[10px] bg-primary/90 text-primary-foreground border-0">
                         <FileText className="w-3 h-3" /> Rx Required
