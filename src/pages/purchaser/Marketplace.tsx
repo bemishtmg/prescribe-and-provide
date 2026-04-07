@@ -61,7 +61,10 @@ export default function Marketplace() {
   const filtered = medicines?.filter((med) => {
     const matchesSearch = med.name.toLowerCase().includes(search.toLowerCase()) ||
       (med.description?.toLowerCase().includes(search.toLowerCase()));
-    return matchesSearch;
+    const matchesCategory = category === "all" ||
+      med.name.toLowerCase().includes(category) ||
+      (med.description?.toLowerCase().includes(category));
+    return matchesSearch && matchesCategory;
   });
 
   return (
