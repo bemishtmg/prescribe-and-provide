@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { Check, X, Eye, Clock, FileText, Loader2, Lock, ShieldCheck, Search, Filter } from "lucide-react";
+import { Check, X, Eye, FileText, Loader2, Lock, ShieldCheck, Search, Filter } from "lucide-react";
 import { SkeletonRow } from "@/components/SkeletonCard";
 import PageTransition from "@/components/PageTransition";
 import type { Tables } from "@/integrations/supabase/types";
