@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useCart } from "@/hooks/useCart";
@@ -11,6 +11,25 @@ import { ShoppingCart, FileText, Pill, Search, Sparkles, Heart, Activity, Shield
 import { SkeletonCard } from "@/components/SkeletonCard";
 import PageTransition from "@/components/PageTransition";
 import { motion } from "framer-motion";
+
+const unsplashImages = [
+  "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=400&h=300&fit=crop",
+  "https://images.unsplash.com/photo-1587854692152-cbe660dbde88?w=400&h=300&fit=crop",
+  "https://images.unsplash.com/photo-1471864190281-a93a3070b6de?w=400&h=300&fit=crop",
+  "https://images.unsplash.com/photo-1576602976047-174e57a47881?w=400&h=300&fit=crop",
+  "https://images.unsplash.com/photo-1550572017-edd951aa8f72?w=400&h=300&fit=crop",
+  "https://images.unsplash.com/photo-1631549916768-4119b2e5f926?w=400&h=300&fit=crop",
+  "https://images.unsplash.com/photo-1607619056574-7b8d3ee536b2?w=400&h=300&fit=crop",
+  "https://images.unsplash.com/photo-1585435557343-3b092031a831?w=400&h=300&fit=crop",
+  "https://images.unsplash.com/photo-1579165466741-7f35e4755660?w=400&h=300&fit=crop",
+  "https://images.unsplash.com/photo-1582560475093-ba66accbc424?w=400&h=300&fit=crop",
+];
+
+function getImageForMedicine(id: string): string {
+  let hash = 0;
+  for (let i = 0; i < id.length; i++) hash = (hash * 31 + id.charCodeAt(i)) | 0;
+  return unsplashImages[Math.abs(hash) % unsplashImages.length];
+}
 
 const categories = [
   { label: "All", value: "all", icon: Sparkles },
