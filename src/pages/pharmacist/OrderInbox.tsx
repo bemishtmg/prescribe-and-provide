@@ -8,28 +8,38 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { Check, X, Eye, Clock, FileText, Loader2, Lock, ShieldCheck } from "lucide-react";
+import { Check, X, Eye, Clock, FileText, Loader2, Lock, ShieldCheck, Search, Filter } from "lucide-react";
 import { SkeletonRow } from "@/components/SkeletonCard";
 import PageTransition from "@/components/PageTransition";
 import type { Tables } from "@/integrations/supabase/types";
 
 type Order = Tables<"orders">;
 
-const statusColors: Record<string, string> = {
-  pending_validation: "bg-warning/10 text-warning border-warning/20",
-  awaiting_payment: "bg-primary/10 text-primary border-primary/20",
-  paid: "bg-success/10 text-success border-success/20",
-  processing: "bg-primary/10 text-primary border-primary/20",
-  shipped: "bg-success/10 text-success border-success/20",
-  rejected: "bg-destructive/10 text-destructive border-destructive/20",
+const statusConfig: Record<string, { label: string; classes: string }> = {
+  pending_validation: { label: "Pending", classes: "bg-yellow-500/15 text-yellow-600 border-yellow-500/30" },
+  awaiting_payment: { label: "Approved", classes: "bg-emerald-500/15 text-emerald-600 border-emerald-500/30" },
+  paid: { label: "Paid", classes: "bg-emerald-500/15 text-emerald-600 border-emerald-500/30" },
+  processing: { label: "Processing", classes: "bg-primary/10 text-primary border-primary/20" },
+  shipped: { label: "Shipped", classes: "bg-emerald-500/15 text-emerald-600 border-emerald-500/30" },
+  rejected: { label: "Rejected", classes: "bg-red-500/15 text-red-600 border-red-500/30" },
 };
+
+function StatusBadge({ status }: { status: string }) {
+  const config = statusConfig[status] ?? { label: status, classes: "bg-muted text-muted-foreground" };
+  return <Badge className={config.classes}>{config.label}</Badge>;
+}
 
 export default function OrderInbox() {
   const queryClient = useQueryClient();
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [rejectionReason, setRejectionReason] = useState("");
   const [showReject, setShowReject] = useState(false);
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [rejectingInline, setRejectingInline] = useState<string | null>(null);
+  const [inlineReason, setInlineReason] = useState("");
 
   const { data: orders, isLoading } = useQuery({
     queryKey: ["pharmacist-orders"],
@@ -80,21 +90,117 @@ export default function OrderInbox() {
       setSelectedOrder(null);
       setShowReject(false);
       setRejectionReason("");
+      setRejectingInline(null);
+      setInlineReason("");
     },
     onError: (err: any) => toast.error(err.message),
   });
 
-  const pendingOrders = orders?.filter((o) => o.status === "pending_validation") ?? [];
-  const otherOrders = orders?.filter((o) => o.status !== "pending_validation") ?? [];
+  const filtered = orders?.filter((o) => {
+    const matchesSearch = o.id.toLowerCase().includes(search.toLowerCase());
+    const matchesStatus = statusFilter === "all" || o.status === statusFilter;
+    return matchesSearch && matchesStatus;
+  }) ?? [];
+
+  const pendingOrders = filtered.filter((o) => o.status === "pending_validation");
+  const otherOrders = filtered.filter((o) => o.status !== "pending_validation");
+
+  const renderQuickActions = (order: Order) => {
+    if (order.status !== "pending_validation") {
+      return (
+        <Button variant="ghost" size="sm" onClick={() => setSelectedOrder(order)} className="gap-1">
+          <Eye className="w-3.5 h-3.5" /> View
+        </Button>
+      );
+    }
+
+    if (rejectingInline === order.id) {
+      return (
+        <div className="flex items-center gap-2">
+          <Input
+            value={inlineReason}
+            onChange={(e) => setInlineReason(e.target.value)}
+            placeholder="Reason..."
+            className="h-8 text-xs w-40"
+          />
+          <Button
+            size="sm"
+            variant="destructive"
+            className="h-8 px-2"
+            disabled={!inlineReason || rejectMutation.isPending}
+            onClick={() => rejectMutation.mutate({ orderId: order.id, reason: inlineReason })}
+          >
+            {rejectMutation.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : "Confirm"}
+          </Button>
+          <Button size="sm" variant="ghost" className="h-8 px-2" onClick={() => { setRejectingInline(null); setInlineReason(""); }}>
+            <X className="w-3 h-3" />
+          </Button>
+        </div>
+      );
+    }
+
+    return (
+      <div className="flex items-center gap-1">
+        <Button
+          size="sm"
+          variant="ghost"
+          className="h-8 px-2 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-500/10"
+          disabled={approveMutation.isPending}
+          onClick={() => approveMutation.mutate(order.id)}
+        >
+          <Check className="w-4 h-4 mr-1" /> Approve
+        </Button>
+        <Button
+          size="sm"
+          variant="ghost"
+          className="h-8 px-2 text-red-600 hover:text-red-700 hover:bg-red-500/10"
+          onClick={() => setRejectingInline(order.id)}
+        >
+          <X className="w-4 h-4 mr-1" /> Reject
+        </Button>
+        <Button variant="ghost" size="sm" className="h-8 px-2" onClick={() => setSelectedOrder(order)}>
+          <Eye className="w-3.5 h-3.5" />
+        </Button>
+      </div>
+    );
+  };
 
   return (
     <PageTransition>
       <div className="space-y-6">
-        {/* Pending Verifications - Data Table */}
+        {/* Search & Filter Bar */}
+        <div className="flex flex-col sm:flex-row gap-3">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input
+              placeholder="Search by order ID..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="pl-10 bg-card"
+            />
+          </div>
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger className="w-full sm:w-48 bg-card">
+              <Filter className="w-4 h-4 mr-2 text-muted-foreground" />
+              <SelectValue placeholder="Filter by status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Statuses</SelectItem>
+              <SelectItem value="pending_validation">Pending</SelectItem>
+              <SelectItem value="awaiting_payment">Approved</SelectItem>
+              <SelectItem value="paid">Paid</SelectItem>
+              <SelectItem value="processing">Processing</SelectItem>
+              <SelectItem value="shipped">Shipped</SelectItem>
+              <SelectItem value="rejected">Rejected</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* Pending Verifications */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-base">
-              <ShieldCheck className="w-5 h-5 text-warning" />
+              <ShieldCheck className="w-5 h-5 text-yellow-500" />
               Pending Verifications ({pendingOrders.length})
             </CardTitle>
           </CardHeader>
@@ -114,7 +220,7 @@ export default function OrderInbox() {
                       <TableHead>Total</TableHead>
                       <TableHead>Prescription</TableHead>
                       <TableHead>Status</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
+                      <TableHead className="text-right">Quick Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -129,14 +235,8 @@ export default function OrderInbox() {
                             <span className="text-xs text-muted-foreground">None</span>
                           )}
                         </TableCell>
-                        <TableCell>
-                          <Badge className={statusColors[order.status]}>Pending</Badge>
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <Button variant="ghost" size="sm" onClick={() => setSelectedOrder(order)} className="gap-1">
-                            <Eye className="w-3.5 h-3.5" /> Review
-                          </Button>
-                        </TableCell>
+                        <TableCell><StatusBadge status={order.status} /></TableCell>
+                        <TableCell className="text-right">{renderQuickActions(order)}</TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
@@ -168,14 +268,8 @@ export default function OrderInbox() {
                       <TableRow key={order.id} className="hover:bg-muted/30">
                         <TableCell className="font-medium font-mono text-sm">#{order.id.slice(0, 8)}</TableCell>
                         <TableCell className="font-semibold">${order.total_price.toFixed(2)}</TableCell>
-                        <TableCell>
-                          <Badge className={statusColors[order.status]}>{order.status.replace(/_/g, " ")}</Badge>
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <Button variant="ghost" size="sm" onClick={() => setSelectedOrder(order)} className="gap-1">
-                            <Eye className="w-3.5 h-3.5" /> View
-                          </Button>
-                        </TableCell>
+                        <TableCell><StatusBadge status={order.status} /></TableCell>
+                        <TableCell className="text-right">{renderQuickActions(order)}</TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
@@ -195,9 +289,7 @@ export default function OrderInbox() {
               <div className="space-y-4">
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-muted-foreground font-mono">Order #{selectedOrder.id.slice(0, 8)}</span>
-                  <Badge className={statusColors[selectedOrder.status]}>
-                    {selectedOrder.status.replace(/_/g, " ")}
-                  </Badge>
+                  <StatusBadge status={selectedOrder.status} />
                 </div>
 
                 <div className="text-lg font-semibold">Total: ${selectedOrder.total_price.toFixed(2)}</div>
@@ -225,7 +317,7 @@ export default function OrderInbox() {
                     {!showReject ? (
                       <div className="flex gap-3">
                         <Button
-                          className="flex-1 gap-2"
+                          className="flex-1 gap-2 bg-emerald-600 hover:bg-emerald-700"
                           onClick={() => approveMutation.mutate(selectedOrder.id)}
                           disabled={approveMutation.isPending}
                         >

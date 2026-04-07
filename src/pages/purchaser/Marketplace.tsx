@@ -33,9 +33,11 @@ function getImageForMedicine(id: string): string {
 
 const categories = [
   { label: "All", value: "all", icon: Sparkles },
-  { label: "Pain Relief", value: "pain", icon: Activity },
+  { label: "Pain Relief", value: "pain relief", icon: Activity },
   { label: "Vitamins", value: "vitamins", icon: Heart },
-  { label: "Chronic Care", value: "chronic", icon: Shield },
+  { label: "Chronic Care", value: "chronic care", icon: Shield },
+  { label: "Antibiotics", value: "antibiotics", icon: Pill },
+  { label: "Skincare", value: "skincare", icon: Heart },
 ];
 
 export default function Marketplace() {
