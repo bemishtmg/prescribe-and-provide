@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useCart } from "@/hooks/useCart";
@@ -33,9 +33,11 @@ function getImageForMedicine(id: string): string {
 
 const categories = [
   { label: "All", value: "all", icon: Sparkles },
-  { label: "Pain Relief", value: "pain", icon: Activity },
+  { label: "Pain Relief", value: "pain relief", icon: Activity },
   { label: "Vitamins", value: "vitamins", icon: Heart },
-  { label: "Chronic Care", value: "chronic", icon: Shield },
+  { label: "Chronic Care", value: "chronic care", icon: Shield },
+  { label: "Antibiotics", value: "antibiotics", icon: Pill },
+  { label: "Skincare", value: "skincare", icon: Heart },
 ];
 
 export default function Marketplace() {
@@ -59,7 +61,10 @@ export default function Marketplace() {
   const filtered = medicines?.filter((med) => {
     const matchesSearch = med.name.toLowerCase().includes(search.toLowerCase()) ||
       (med.description?.toLowerCase().includes(search.toLowerCase()));
-    return matchesSearch;
+    const matchesCategory = category === "all" ||
+      med.name.toLowerCase().includes(category) ||
+      (med.description?.toLowerCase().includes(category));
+    return matchesSearch && matchesCategory;
   });
 
   return (

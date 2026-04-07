@@ -1,10 +1,24 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ClipboardList, Package, DollarSign, Clock } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { ClipboardList, Package, DollarSign, Clock, Check, X } from "lucide-react";
+import { toast } from "sonner";
 import PageTransition from "@/components/PageTransition";
 
+const statusConfig: Record<string, { label: string; classes: string }> = {
+  pending_validation: { label: "Pending", classes: "bg-yellow-500/15 text-yellow-600 border-yellow-500/30" },
+  awaiting_payment: { label: "Approved", classes: "bg-emerald-500/15 text-emerald-600 border-emerald-500/30" },
+  paid: { label: "Paid", classes: "bg-emerald-500/15 text-emerald-600 border-emerald-500/30" },
+  processing: { label: "Processing", classes: "bg-primary/10 text-primary border-primary/20" },
+  shipped: { label: "Shipped", classes: "bg-emerald-500/15 text-emerald-600 border-emerald-500/30" },
+  rejected: { label: "Rejected", classes: "bg-red-500/15 text-red-600 border-red-500/30" },
+};
+
 export default function PharmacistOverview() {
+  const queryClient = useQueryClient();
+
   const { data: orders } = useQuery({
     queryKey: ["pharmacist-orders"],
     queryFn: async () => {
@@ -23,6 +37,30 @@ export default function PharmacistOverview() {
     },
   });
 
+  const approveMutation = useMutation({
+    mutationFn: async (orderId: string) => {
+      const { error } = await supabase.from("orders").update({ status: "awaiting_payment" }).eq("id", orderId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["pharmacist-orders"] });
+      toast.success("Order approved");
+    },
+    onError: (err: any) => toast.error(err.message),
+  });
+
+  const rejectMutation = useMutation({
+    mutationFn: async (orderId: string) => {
+      const { error } = await supabase.from("orders").update({ status: "rejected", rejection_reason: "Rejected from dashboard" }).eq("id", orderId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["pharmacist-orders"] });
+      toast.success("Order rejected");
+    },
+    onError: (err: any) => toast.error(err.message),
+  });
+
   const pending = orders?.filter((o) => o.status === "pending_validation").length ?? 0;
   const totalOrders = orders?.length ?? 0;
   const totalMeds = medicines?.length ?? 0;
@@ -30,10 +68,10 @@ export default function PharmacistOverview() {
     .reduce((sum, o) => sum + o.total_price, 0) ?? 0;
 
   const stats = [
-    { label: "Pending Verifications", value: pending, icon: Clock, color: "text-warning" },
+    { label: "Pending Verifications", value: pending, icon: Clock, color: "text-yellow-500" },
     { label: "Total Orders", value: totalOrders, icon: ClipboardList, color: "text-primary" },
     { label: "Medicines", value: totalMeds, icon: Package, color: "text-primary" },
-    { label: "Revenue", value: `$${revenue.toFixed(2)}`, icon: DollarSign, color: "text-success" },
+    { label: "Revenue", value: `$${revenue.toFixed(2)}`, icon: DollarSign, color: "text-emerald-500" },
   ];
 
   return (
@@ -55,7 +93,7 @@ export default function PharmacistOverview() {
           ))}
         </div>
 
-        {/* Recent Orders */}
+        {/* Recent Orders with Quick Actions */}
         <Card>
           <CardHeader>
             <CardTitle className="text-base">Recent Orders</CardTitle>
@@ -65,15 +103,47 @@ export default function PharmacistOverview() {
               <p className="text-muted-foreground text-center py-4">No orders yet</p>
             ) : (
               <div className="space-y-2">
-                {orders.slice(0, 5).map((order) => (
-                  <div key={order.id} className="flex items-center justify-between p-3 rounded-lg hover:bg-muted/30 transition-colors">
-                    <div>
-                      <p className="text-sm font-medium">Order #{order.id.slice(0, 8)}</p>
-                      <p className="text-xs text-muted-foreground">{order.status.replace(/_/g, " ")}</p>
+                {orders.slice(0, 8).map((order) => {
+                  const config = statusConfig[order.status] ?? { label: order.status, classes: "" };
+                  return (
+                    <div key={order.id} className="flex items-center justify-between p-3 rounded-lg hover:bg-muted/30 transition-colors">
+                      <div className="flex items-center gap-3">
+                        <div>
+                          <p className="text-sm font-medium font-mono">#{order.id.slice(0, 8)}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {new Date(order.created_at).toLocaleDateString()}
+                          </p>
+                        </div>
+                        <Badge className={config.classes}>{config.label}</Badge>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <p className="text-sm font-semibold">${order.total_price.toFixed(2)}</p>
+                        {order.status === "pending_validation" && (
+                          <div className="flex gap-1 ml-2">
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              className="h-7 w-7 text-emerald-600 hover:bg-emerald-500/10"
+                              onClick={() => approveMutation.mutate(order.id)}
+                              disabled={approveMutation.isPending}
+                            >
+                              <Check className="w-4 h-4" />
+                            </Button>
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              className="h-7 w-7 text-red-600 hover:bg-red-500/10"
+                              onClick={() => rejectMutation.mutate(order.id)}
+                              disabled={rejectMutation.isPending}
+                            >
+                              <X className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        )}
+                      </div>
                     </div>
-                    <p className="text-sm font-semibold">${order.total_price.toFixed(2)}</p>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </CardContent>
